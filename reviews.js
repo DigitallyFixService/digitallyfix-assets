@@ -246,7 +246,7 @@
         // Spam trap filled -> pretend success, save nothing
         if(hp.value){
           msgEl.className = 'dh-rv-msg ok';
-          msgEl.textContent = 'Thank you! Your review will appear after approval.';
+          msgEl.textContent = 'Thank you! Your review has been posted.';
           msgEl.style.display = 'block';
           return;
         }
@@ -265,7 +265,7 @@
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
-        function saveReview(imageUrl){
+        function saveReview(imageUrl, photoFailed){
           dhDB.collection('reviews').add({
             postId: postId,
             productName: productName,
@@ -274,13 +274,15 @@
             rating: selectedRating,
             text: text,
             imageUrl: imageUrl || null,
-            status: 'pending',
+            status: 'approved',
             reply: '',
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
           }).then(function(){
             try { localStorage.setItem('dh_rv_last', String(Date.now())); } catch(e) {}
             msgEl.className = 'dh-rv-msg ok';
-            msgEl.textContent = 'Thank you! Your review will appear after approval.';
+            msgEl.textContent = photoFailed
+              ? 'Your review has been posted, but the photo could not be uploaded.'
+              : 'Thank you! Your review has been posted.';
             msgEl.style.display = 'block';
             wrap.querySelector('[data-role="dh-rv-name"]').value = '';
             wrap.querySelector('[data-role="dh-rv-text"]').value = '';
@@ -289,6 +291,7 @@
             selectedFile = null;
             selectedRating = 0;
             starsInput.forEach(function(s2){ s2.classList.remove('active'); });
+            loadReviews();
           }).catch(function(){
             msgEl.className = 'dh-rv-msg err';
             msgEl.textContent = 'Something went wrong. Please try again.';
@@ -303,7 +306,7 @@
           btn.textContent = 'Uploading photo...';
           uploadToCloudinary(selectedFile, function(url){
             btn.textContent = 'Submitting...';
-            saveReview(url);
+            saveReview(url, !url);
           });
         } else {
           saveReview(null);
